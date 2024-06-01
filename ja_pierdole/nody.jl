@@ -1,11 +1,16 @@
 abstract type Node end
 
+# abstract type Operator <: Node end
 
 # Wejście x, dla niego nie liczymy gradientu (bo po co? xD) 
 mutable struct InputNode <: Node
     output::AbstractVecOrMat
 
     InputNode(output::AbstractVecOrMat) = new(output)
+end
+
+struct ConstantNode{T} <: Node
+    output :: T
 end
 
 # Zmienna (np jakaś macierz wag), to właśnie jej wagami kręcimy, żeby optyamlizować sieć
@@ -23,14 +28,10 @@ mutable struct OperationNode{F} <: Node
     output::AbstractVecOrMat
     gradient::AbstractVecOrMat
 
-    OperationNode(fun::F, inputs::Vector{Node}, output_size::Tuple{Int,Int}) where F = new{F}( inputs, zeros(output_size), zeros(output_size))
+    OperationNode(fun::F, inputs::Vector{Node}, output_size::Tuple{Int, Int}) where F = 
+        new{F}(inputs, zeros(output_size), zeros(output_size))
+
+    OperationNode(fun::F, inputs::Vector{Node}, output_size::Tuple{Int}) where F = 
+        new{F}(inputs, zeros(output_size), zeros(output_size))
+
 end
-
-# mutable struct BroadcastedOperator{F} <: Operator
-#     inputs :: Any
-#     output :: Any
-#     gradient :: Any
-
-#     BroadcastedOperator(fun::F, inputs...) = where F
-#         new{typeof(fun)}(inputs, nothing, nothing)
-# end

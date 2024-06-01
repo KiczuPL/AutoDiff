@@ -8,14 +8,12 @@ include("ops.jl")
 
 import Base: +
 Base.Broadcast.broadcasted(+, x::Node, y::Node) = BroadcastedOperator(+, [x, y])
-# +(x::Node, y::Node) = OperationNode(+, [x, y])
 forward(::OperationNode{typeof(+)}, x, y) = return x .+ y
 backward(::OperationNode{typeof(+)}, x, y, g) = tuple(g, g)
 
 
 import Base: -
 Base.Broadcast.broadcasted(-, x::Node, y::Node) = OperationNode(-, [x, y])
-# -(x::Node, y::Node) = OperationNode(-, [x, y])
 forward(::OperationNode{typeof(-)}, x, y) = return x .- y
 backward(::OperationNode{typeof(-)}, x, y, g) = tuple(g,-g)
 
@@ -29,14 +27,19 @@ backward(::OperationNode{typeof(mul!)}, A, x, g) = tuple(g * x', A' * g)
 
 
 # x .* y (element-wise multiplication)
-Base.Broadcast.broadcasted(*, x::Node, y::Node) = OperationNode(*, [x, y])
+import Base: broadcast
+broadcasted(*, x::Node, y::Node) = OperationNode(*, [x, y])
 forward(::OperationNode{typeof(*)}, x, y) = return x .* y
-backward(node::OperationNode{typeof(*)}, x, y, g) = let
-    𝟏 = ones(length(node.output))
-    Jx = diagm(y .* 𝟏)
-    Jy = diagm(x .* 𝟏)
-    tuple(Jx' * g, Jy' * g)
-end
+backward(::OperationNode{typeof(*)}, x, y, g) = tuple(g .* y, g .* x)
+
+# Base.Broadcast.broadcasted(*, x::Node, y::Node) = OperationNode(*, [x, y])
+# forward(::OperationNode{typeof(*)}, x, y) = return x .* y
+# backward(node::OperationNode{typeof(*)}, x, y, g) = let
+#     𝟏 = ones(length(node.output))
+#     Jx = diagm(y .* 𝟏)
+#     Jy = diagm(x .* 𝟏)
+#     tuple(Jx' * g, Jy' * g)
+# end
 
 
 import Base: sum
@@ -58,8 +61,8 @@ backward(::OperationNode{typeof(^)}, x, n, g) = tuple(g .* n .* x .^ (n.-1), g .
 # tanh function overload with forward and backward methods
 import Base: tanh
 tanh(x::Node) = OperationNode(tanh, Node[x])
-forward(::OperationNode{typeof(tanh)}, x) = return tanh(x)
-backward(::OperationNode{typeof(tanh)}, x, g) = tuple(g .* (1 .- tanh(x) .^ 2))
+forward(::OperationNode{typeof(tanh)}, x) = return tanh.(x)
+backward(::OperationNode{typeof(tanh)}, x, g) = tuple(g .* (1 .- tanh.(x) .^ 2))
 
 # sigmoid function overload with forward and backward methods
 import Base: broadcast

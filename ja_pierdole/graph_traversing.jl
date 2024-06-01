@@ -22,7 +22,7 @@ end
 
 update!(node::ConstantNode, gradient) = nothing
 update!(node::VariableNode, gradient) = node.gradient .+= gradient
-update!(node::InputNode,gradient) = nothing
+update!(node::InputNode, gradient) = nothing
 update!(node::Node, gradient) = node.gradient .+= gradient
 
 function backward!(order::Vector{Node}; seed=1.0)
@@ -45,4 +45,21 @@ function backward!(node::OperationNode)
         update!(input, gradient)
     end
     return nothing
+end
+
+function predict!(input::AbstractVecOrMat, input_node::InputNode, output_node::Node, order::Vector{Node})
+    input_node.output .= input
+    for node in order
+        compute!(node)
+    end
+    return output_node.output
+end
+
+
+
+function predict!(order::Vector{Node})
+    for node in order
+        compute!(node)
+    end
+    return last(order).output
 end

@@ -27,3 +27,20 @@ function topological_sort(head::Node)
     visit(head, visited, order)
     return order
 end
+
+
+function init_nodes!(order::Vector{Node})
+    for node in order
+        init_node!(node)
+    end
+end
+
+
+init_node!(node::ConstantNode) = nothing
+init_node!(node::InputNode) = nothing
+init_node!(node::VariableNode) = nothing
+function init_node!(node::OperationNode)
+    output_size = size(forward(node, [input.output for input in node.inputs]...))
+    node.output = zeros(output_size)
+    node.gradient = zeros(output_size)
+end

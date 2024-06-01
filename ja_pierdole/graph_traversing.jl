@@ -18,3 +18,31 @@ function forward!(order::Vector{Node})
     end
     return last(order).output
 end
+
+
+update!(node::ConstantNode, gradient) = nothing
+update!(node::VariableNode, gradient) = node.gradient .+= gradient
+update!(node::InputNode,gradient) = nothing
+update!(node::Node, gradient) = node.gradient .+= gradient
+
+function backward!(order::Vector{Node}; seed=1.0)
+    result = last(order)
+    result.gradient = [seed]
+    # @assert length(result.output) == [1] "Gradient is defined only for scalar functions"
+    for node in reverse(order)
+        backward!(node)
+    end
+    return nothing
+end
+
+function backward!(node::ConstantNode) end
+function backward!(node::VariableNode) end
+function backward!(node::InputNode) end
+function backward!(node::OperationNode)
+    inputs = node.inputs
+    gradients = backward(node, [input.output for input in inputs]..., node.gradient)
+    for (input, gradient) in zip(inputs, gradients)
+        update!(input, gradient)
+    end
+    return nothing
+end

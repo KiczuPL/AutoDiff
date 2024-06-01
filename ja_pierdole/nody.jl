@@ -5,12 +5,14 @@ abstract type Node end
 # Wejście x, dla niego nie liczymy gradientu (bo po co? xD) 
 mutable struct InputNode <: Node
     output::AbstractVecOrMat
+    name::String
 
-    InputNode(output::AbstractVecOrMat) = new(output)
+    InputNode(output::AbstractVecOrMat, name="?"::String) = new(output, name)
 end
 
-struct ConstantNode{T} <: Node
-    output :: T
+struct ConstantNode <: Node
+    output::AbstractVecOrMat
+    ConstantNode(output) = new([output])
 end
 
 # Zmienna (np jakaś macierz wag), to właśnie jej wagami kręcimy, żeby optyamlizować sieć
@@ -19,19 +21,16 @@ mutable struct VariableNode <: Node
     gradient::AbstractVecOrMat
     name::String
 
-    VariableNode(output::AbstractVecOrMat, name="?"::String) = new(output, zeros(Float64, size(output)), name)
+    VariableNode(output::AbstractVecOrMat, name="?"::String) = new(output, zeros(size(output)), name)
 end
 
 # Operacja, dla niej liczymy gradient normalnie
 mutable struct OperationNode{F} <: Node
     inputs::Vector{Node}
-    output::AbstractVecOrMat
-    gradient::AbstractVecOrMat
+    output::Union{AbstractVecOrMat,Nothing}
+    gradient::Union{AbstractVecOrMat,Nothing}
 
-    OperationNode(fun::F, inputs::Vector{Node}, output_size::Tuple{Int, Int}) where F = 
-        new{F}(inputs, zeros(output_size), zeros(output_size))
-
-    OperationNode(fun::F, inputs::Vector{Node}, output_size::Tuple{Int}) where F = 
-        new{F}(inputs, zeros(output_size), zeros(output_size))
+    OperationNode(fun::F, inputs::Vector{Node}) where {F} =
+        new{F}(inputs, nothing, nothing)
 
 end

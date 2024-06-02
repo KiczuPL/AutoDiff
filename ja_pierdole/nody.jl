@@ -8,11 +8,13 @@ mutable struct InputNode <: Node
     name::String
 
     InputNode(output::AbstractVecOrMat, name="?"::String) = new(output, name)
+    InputNode(output_size, name="?"::String) = new(zeros(output_size), name)
 end
 
 struct ConstantNode <: Node
     output::AbstractVecOrMat
-    ConstantNode(output) = new([output])
+    name::String
+    ConstantNode(output; name="?"::String) = new([output], name)
 end
 
 # Zmienna (np jakaś macierz wag), to właśnie jej wagami kręcimy, żeby optyamlizować sieć
@@ -21,7 +23,8 @@ mutable struct VariableNode <: Node
     gradient::AbstractVecOrMat
     name::String
 
-    VariableNode(output::AbstractVecOrMat, name="?"::String) = new(output, zeros(size(output)), name)
+    VariableNode(output::AbstractVecOrMat; name="?"::String) = new(output, rand(size(output)), name)
+    VariableNode(output_size; name="?"::String) = new(randn(output_size), randn(output_size), name)
 end
 
 # Operacja, dla niej liczymy gradient normalnie
@@ -29,8 +32,8 @@ mutable struct OperationNode{F} <: Node
     inputs::Vector{Node}
     output::Union{AbstractVecOrMat,Nothing}
     gradient::Union{AbstractVecOrMat,Nothing}
-
-    OperationNode(fun::F, inputs::Vector{Node}) where {F} =
-        new{F}(inputs, nothing, nothing)
+    name::String
+    OperationNode(fun::F, inputs::Vector{Node}; name="?"::String) where {F} =
+        new{F}(inputs, nothing, nothing, name)
 
 end

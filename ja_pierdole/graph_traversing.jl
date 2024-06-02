@@ -4,17 +4,34 @@ reset!(node::ConstantNode) = nothing
 reset!(node::InputNode) = nothing
 reset!(node::VariableNode) = fill!(node.gradient, 0)
 reset!(node::OperationNode) = fill!(node.gradient, 0)
+function reset!(order::Vector{Node})
+    for node in order
+        reset!(node)
+    end
+    return nothing
+end
+
+
+reset_operations!(node::ConstantNode) = nothing
+reset_operations!(node::InputNode) = nothing
+reset_operations!(node::VariableNode) = nothing
+reset_operations!(node::OperationNode) = fill!(node.gradient, 0)
+
 
 compute!(node::ConstantNode) = nothing
 compute!(node::InputNode) = nothing
 compute!(node::VariableNode) = nothing
-compute!(node::OperationNode) =
-    node.output = forward(node, [input.output for input in node.inputs]...)
+function compute!(node::OperationNode) 
+    # println("compute_node ", node)
+    # println("input sizes: ", [size(input.output) for input in node.inputs])
+    node.output = forward(node, [input.output for input in node.inputs]...) 
+    # println("compute_node-successful! ", node)
+end
 
 function forward!(order::Vector{Node})
     for node in order
         compute!(node)
-        reset!(node)
+        reset_operations!(node)
     end
     return last(order).output
 end
@@ -42,6 +59,8 @@ function backward!(node::OperationNode)
     inputs = node.inputs
     gradients = backward(node, [input.output for input in inputs]..., node.gradient)
     for (input, gradient) in zip(inputs, gradients)
+        # println("input: ", input.gradient)
+        # println("gradient: ", gradient)
         update!(input, gradient)
     end
     return nothing
@@ -62,4 +81,21 @@ function predict!(order::Vector{Node})
         compute!(node)
     end
     return last(order).output
+end
+
+function find_all_variables(order::Vector{Node})
+    variables = VariableNode[]
+    for node in order
+        if node isa VariableNode
+            push!(variables, node)
+        end
+    end
+    return variables
+end
+
+function adjust!(variables::Vector{VariableNode}, lr)
+    for variable in variables
+        variable.output .-= lr .* variable.gradient
+    end
+    return nothing
 end

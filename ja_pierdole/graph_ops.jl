@@ -2,14 +2,20 @@ include("nody.jl")
 include("graph_building.jl")
 include("graph_traversing.jl")
 include("ops.jl")
-
-
+include("loss.jl")
+include("cells.jl")
 
 
 import Base: +
-Base.Broadcast.broadcasted(+, x::Node, y::Node) = BroadcastedOperator(+, [x, y])
++(x::Node, y::Node) = OperationNode(+, [x, y])
 forward(::OperationNode{typeof(+)}, x, y) = return x .+ y
 backward(::OperationNode{typeof(+)}, x, y, g) = tuple(g, g)
+
+
+# import Base: +
+# Base.Broadcast.broadcasted(+, x::Node, y::Node) = BroadcastedOperator(+, [x, y])
+# forward(::OperationNode{typeof(+)}, x, y) = return x .+ y
+# backward(::OperationNode{typeof(+)}, x, y, g) = tuple(g, g)
 
 
 import Base: -
@@ -32,15 +38,6 @@ broadcasted(*, x::Node, y::Node) = OperationNode(*, [x, y])
 forward(::OperationNode{typeof(*)}, x, y) = return x .* y
 backward(::OperationNode{typeof(*)}, x, y, g) = tuple(g .* y, g .* x)
 
-# Base.Broadcast.broadcasted(*, x::Node, y::Node) = OperationNode(*, [x, y])
-# forward(::OperationNode{typeof(*)}, x, y) = return x .* y
-# backward(node::OperationNode{typeof(*)}, x, y, g) = let
-#     𝟏 = ones(length(node.output))
-#     Jx = diagm(y .* 𝟏)
-#     Jy = diagm(x .* 𝟏)
-#     tuple(Jx' * g, Jy' * g)
-# end
-
 
 import Base: sum
 sum(x::Node) = OperationNode(sum, Node[x])
@@ -50,7 +47,6 @@ backward(::OperationNode{typeof(sum)}, x, g) = let
     J = 𝟏'
     tuple(J' * g)
 end
-
 
 import Base: ^
 ^(x::Node, n::Node) = OperationNode(^, [x, n])

@@ -23,8 +23,8 @@ mutable struct VariableNode <: Node
     gradient::AbstractVecOrMat
     name::String
 
-    VariableNode(output::AbstractVecOrMat; name="?"::String) = new(output, rand(size(output)), name)
-    VariableNode(output_size; name="?"::String) = new(randn(output_size), randn(output_size), name)
+    VariableNode(output_size; name="?"::String) = new(rand(output_size...), zeros(output_size), name)
+    VariableNode(output::AbstractVecOrMat; name="?"::String) = new(output, zeros(size(output)), name)
 end
 
 # Operacja, dla niej liczymy gradient normalnie

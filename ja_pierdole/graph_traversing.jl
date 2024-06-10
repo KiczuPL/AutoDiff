@@ -2,8 +2,8 @@ include("nody.jl")
 
 reset!(node::ConstantNode) = nothing
 reset!(node::InputNode) = nothing
-reset!(node::VariableNode) = fill!(node.gradient, 0)
-reset!(node::OperationNode) = fill!(node.gradient, 0)
+reset!(node::VariableNode) = fill!(node.gradient, zero(eltype(node.gradient)))
+reset!(node::OperationNode) = fill!(node.gradient, zero(eltype(node.gradient)))
 function reset!(order::Vector{Node})
     for node in order
         reset!(node)
@@ -15,16 +15,16 @@ end
 reset_operations!(node::ConstantNode) = nothing
 reset_operations!(node::InputNode) = nothing
 reset_operations!(node::VariableNode) = nothing
-reset_operations!(node::OperationNode) = fill!(node.gradient, 0)
+reset_operations!(node::OperationNode) = fill!(node.gradient, zero(eltype(node.gradient)))
 
 
 compute!(node::ConstantNode) = nothing
 compute!(node::InputNode) = nothing
 compute!(node::VariableNode) = nothing
-function compute!(node::OperationNode) 
+function compute!(node::OperationNode)
     # println("compute_node ", node)
     # println("input sizes: ", [size(input.output) for input in node.inputs])
-    node.output = forward(node, [input.output for input in node.inputs]...) 
+    node.output = forward(node, [input.output for input in node.inputs]...)
     # println("compute_node-successful! ", node)
 end
 
@@ -40,7 +40,14 @@ end
 update!(node::ConstantNode, gradient) = nothing
 update!(node::VariableNode, gradient) = node.gradient .+= gradient
 update!(node::InputNode, gradient) = nothing
-update!(node::Node, gradient) = node.gradient .+= gradient
+update!(node::OperationNode, gradient) =
+    let
+        # println("update! ", typeof(node))
+        # println("update! --size", size(node.gradient))
+        # println("update! --sizeggg", size(gradient))
+        node.gradient .+= gradient
+        # node.gradient = clamp.(node.gradient, -25, 25)
+    end
 
 function backward!(order::Vector{Node}; seed=1.0)
     result = last(order)
@@ -56,11 +63,16 @@ function backward!(node::ConstantNode) end
 function backward!(node::VariableNode) end
 function backward!(node::InputNode) end
 function backward!(node::OperationNode)
+    # println("backward! ", typeof(node))
     inputs = node.inputs
     gradients = backward(node, [input.output for input in inputs]..., node.gradient)
     for (input, gradient) in zip(inputs, gradients)
-        # println("input: ", input.gradient)
-        # println("gradient: ", gradient)
+        # if !(input isa ConstantNode)
+        #     println("in_node: ", typeof(input))
+        #     println("input: ", size(input.gradient))
+        #     println("gradient: ", size(gradient))
+        # end
+
         update!(input, gradient)
     end
     return nothing
@@ -95,7 +107,10 @@ end
 
 function adjust!(variables::Vector{VariableNode}, lr)
     for variable in variables
+        # println("variable: ", variable.name)
+        # @show variable.output
         variable.output .-= lr .* variable.gradient
+        # @show variable.output
     end
     return nothing
 end

@@ -40,12 +40,12 @@ init_node!(node::ConstantNode) = nothing
 init_node!(node::InputNode) = nothing
 init_node!(node::VariableNode) = nothing
 function init_node!(node::OperationNode)
-    # println("init_node! ", node)
-    # println("input sizes: ", [size(input.output) for input in node.inputs])
-    # println("number of inputs: ", length(node.inputs))
+    println("init_node! ", typeof(node))
+    println("input sizes: ", [size(input.output) for input in node.inputs])
+    println("number of inputs: ", length(node.inputs))
     # println("inputs: ", [input.output for input in node.inputs])
     output_size = size(forward(node, [input.output for input in node.inputs]...))
     node.output = zeros(output_size)
     node.gradient = zeros(output_size)
-    # println("init_node-successful! ", node)
+    println("init_node-successful! ", typeof(node))
 end

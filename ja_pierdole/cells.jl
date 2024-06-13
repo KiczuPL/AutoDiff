@@ -101,7 +101,7 @@ end
 
 function Dense(dims::Pair{Int64, Int64}, activation; weight_init=randn) 
   println("new Dense: dims(Wx): ",(dims[2],dims[1]," b: ", dims[2]))
-  Dense(VariableNode((dims[2],dims[1]), name="Wx"),VariableNode((dims[2]), name="b"), activation)
+  Dense(VariableNode((dims[2],dims[1]), name="Wx"),VariableNode((dims[2],1), name="b"), activation)
 end
 
 
@@ -148,7 +148,7 @@ end
 
   function RNN(dims::Pair{Int64, Int64}, activation; weight_init=randn) 
     println("new RNN: dims(Wx): ",(dims[2],dims[1]," b: ", dims[2]))
-    RNN(VariableNode((dims[2],dims[1]), name="Wxx"), VariableNode((dims[2],dims[2]), name="Whh"), VariableNode((dims[2]), name="b"), activation, nothing, 0)
+    RNN(VariableNode((dims[2],dims[1]), name="Wxx"), VariableNode((dims[2],dims[2]), name="Whh"), VariableNode((dims[2],1), name="b"), activation, nothing, 0)
   end
   
   

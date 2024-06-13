@@ -36,26 +36,31 @@ backward(::OperationNode{typeof(mul!)}, A, x, g) = tuple(g * x', A' * g)
 import Base: broadcast
 broadcasted(*, x::Node, y::Node) = OperationNode(*, Node[x, y])
 forward(::OperationNode{typeof(*)}, x, y) = return x .* y
-backward(::OperationNode{typeof(*)}, x, y, g) = tuple(g .* y, g .* x)
-
+# backward(::OperationNode{typeof(*)}, x, y, g) = tuple(g .* y, g .* x)
+# backward(::OperationNode{typeof(*)}, x, y, g) = tuple(g .* y, x .* g)
+backward(node::OperationNode{typeof(*)}, x, y, g) =
+    let
+        return tuple(g .* y, g .* x)
+    end
 
 import Base: sum
 sum(x::Node) = OperationNode(sum, Node[x])
 forward(::OperationNode{typeof(sum)}, x) = return [sum(x)]
 # backward(::OperationNode{typeof(sum)}, x, g) = tuple(g .* ones(size(x)))
 # JEBIE SIE NA BACKWARDZIE
-backward(::OperationNode{typeof(sum)}, x, g) = let
-    𝟏 = ones(length(x.output))
-    J = 𝟏'
-    tuple(J' * g)
-end
+backward(::OperationNode{typeof(sum)}, x, g) =
+    let
+        𝟏 = ones(length(x))
+        J = 𝟏'
+        tuple(J' * g)
+    end
 
 
 import Base: ^
 ^(x::Node, n::Node) = OperationNode(^, Node[x, n])
 forward(::OperationNode{typeof(^)}, x, n) = return x .^ n
 backward(::OperationNode{typeof(^)}, x, n, g) =
-    let 
+    let
         return tuple(g .* n .* x .^ (n .- 1), g .* log.(abs.(x)) .* x .^ n)
     end
 
@@ -84,14 +89,14 @@ backward(::OperationNode{typeof(sigmoid)}, x, g) = tuple(g .* sigmoid.(x) .* (1 
 cross_entropy_loss(y_hat::Node, y::Node) = OperationNode(cross_entropy_loss, Node[y_hat, y])
 forward(::OperationNode{typeof(cross_entropy_loss)}, y_hat, y) =
     let
-        y_hat = y_hat .- maximum(y_hat)
+        # y_hat = y_hat .- maximum(y_hat)
         y_hat = exp.(y_hat) ./ sum(exp.(y_hat))
         loss = sum(log.(y_hat) .* y) * -1.0
         return [loss]
     end
 backward(::OperationNode{typeof(cross_entropy_loss)}, y_hat, y, g) =
     let
-        y_hat = y_hat .- maximum(y_hat)
+        # y_hat = y_hat .- maximum(y_hat)
         y_hat = exp.(y_hat) ./ sum(exp.(y_hat))
         return tuple(g .* (y_hat - y))
     end

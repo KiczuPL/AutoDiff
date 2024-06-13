@@ -38,14 +38,28 @@ end
 
 
 update!(node::ConstantNode, gradient) = nothing
-update!(node::VariableNode, gradient) = node.gradient .+= gradient
+update!(node::VariableNode, gradient) = let 
+    if  length(size(node.gradient)) == 1 || size(node.gradient)[2] == 1
+    node.gradient .+= sum(gradient, dims=2)
+    else
+        node.gradient .+= gradient
+    end
+    # clamp!(node.gradient, -25*60000, 25*60000)
+    
+end
 update!(node::InputNode, gradient) = nothing
 update!(node::OperationNode, gradient) =
     let
         # println("update! ", typeof(node))
         # println("update! --size", size(node.gradient))
         # println("update! --sizeggg", size(gradient))
-        node.gradient .+= gradient
+
+        if  length(size(node.gradient)) == 1 || size(node.gradient)[2] == 1
+            node.gradient .+= sum(gradient, dims=2)
+            else
+                node.gradient .+= gradient
+            end
+        # clamp!(node.gradient, -25, 25)
         # node.gradient = clamp.(node.gradient, -25, 25)
     end
 

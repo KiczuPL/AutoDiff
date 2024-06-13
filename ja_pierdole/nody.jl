@@ -8,7 +8,7 @@ mutable struct InputNode <: Node
     name::String
 
     InputNode(output::AbstractVecOrMat, name="?"::String) = new(output, name)
-    InputNode(output_size, name="?"::String) = new(zeros(output_size), name)
+    InputNode(output_size, name="?"::String) = new(zeros(output_size...), name)
 end
 
 struct ConstantNode <: Node
@@ -23,7 +23,7 @@ mutable struct VariableNode <: Node
     gradient::AbstractVecOrMat
     name::String
 
-    VariableNode(output_size; name="?"::String) = new(rand(output_size...), zeros(output_size), name)
+    VariableNode(output_size; name="?"::String) = new(xavier_init(output_size...), zeros(output_size...), name)
     VariableNode(output::AbstractVecOrMat; name="?"::String) = new(output, zeros(size(output)), name)
 end
 
